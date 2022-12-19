@@ -22,3 +22,26 @@ Plugin that integrates the [Phoscon/RaspBee](https://dresden-elektronik.github.i
 - https://phoscon.de/de/raspbee/install
 - https://dresden-elektronik.github.io/deconz-rest-doc/
 - https://github.com/OpenHausIO/backend
+
+# Development
+Add plugin item via HTTP API:<br />
+[PUT] `http://{{HOST}}:{{PORT}}/api/plugins/`
+```json
+{
+   "_id":"63a073874e8373f8ccdbe4a6",
+   "name":"Phoscon Gateway",
+   "version":1,
+   "intents":[
+      "devices",
+      "endpoints",
+      "ssdp",
+      "vault",
+      "store"
+   ],
+   "uuid":"2bba8d0f-e26e-42b6-ae3f-56ec84b339dd"
+}
+```
+Mount the source code into the backend plugins folder
+```sh
+sudo mount --bind ~/projects/OpenHaus/plugins/oh-plg-phoscon/ ~/projects/OpenHaus/backend/plugins/2bba8d0f-e26e-42b6-ae3f-56ec84b339dd/
+```
