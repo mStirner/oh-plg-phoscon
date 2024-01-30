@@ -16,7 +16,12 @@ Plugin that integrates the [Phoscon/RaspBee](https://dresden-elektronik.github.i
 3) Go to the Gateway settings page and put it in "paring" mode
 4) Update the store item "pairing" to true
 5) The plugin accuieres a API Key from the gateway
-6) Pairing/Installation complete
+6) To fetch lights/sensor the backend or connector need to be restarted¹
+7) Lights & Sensors are fetched and as endpoints created
+8) Pairing/Installation complete
+
+# Note
+<small>¹) This is known bug, the problem is that there is currently no wait to check if a connector is available/device interface is bridged</small>
 
 # Links
 - https://phoscon.de/de/raspbee/install
