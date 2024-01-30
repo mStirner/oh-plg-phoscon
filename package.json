@@ -22,5 +22,8 @@
     "grunt": "^1.5.3",
     "grunt-contrib-compress": "^2.0.0",
     "grunt-env": "^1.0.1"
+  },
+  "dependencies": {
+    "ws": "^8.16.0"
   }
 }
