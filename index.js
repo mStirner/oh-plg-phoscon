@@ -46,5 +46,12 @@ module.exports = (info, logger, init) => {
         ], info);
 
 
+        // Phase 5: Handle state changes for endpoints
+        require("./state-handler.js")(logger, [
+            C_ENDPOINTS,
+            C_DEVICES
+        ], info);
+
+
     });
 };

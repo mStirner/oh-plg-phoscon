@@ -1,4 +1,3 @@
-const { promises } = require("../../components/devices/class.adapter");
 const request = require("../../helper/request");
 
 module.exports = async (logger, [
@@ -6,90 +5,98 @@ module.exports = async (logger, [
     C_VAULT,
     C_STORE
 ], info) => {
-    try {
 
-        /*
-        // draft for a "composing" function for/with components
-        // the function call should handle everything waht we do know manuelly
-        // it should fetch items based on other items
-        // e.g. "Master item" = device instance
-        // and everything else where the device is "mentioned" or assigned
-                compose([{
-                    instance: C_DEVICES,
-                    filter: {
-                        meta: {
-                            manufacturer: "phoscon",
-                            model: "raspbee",
-                        }
-                    }
-                }, {
-                    instance: C_VAULT,
-                    reference: C_DEVICES
-                }, {
-                    instance: C_STORE,
-                    reference: C_DEVICES
-                }], (device, vault, store) => {
-        
-                    // device = matcheing filter
-                    // valuet = mathing device
-                    // store = mathing device
-        
-                });
-        */
+    C_DEVICES.found({
+        labels: [
+            "zigbee=true",
+            "phoscon=true",
+        ]
+    }, async (device) => {
 
-        /*
-        [() => {
-            return new Promise((resolve) => {
 
-                C_DEVICES.found({
-                    meta: {
-                        manufacturer: "phoscon",
-                        model: "raspbee",
-                    }
-                }, resolve);
+        // create/get config store for device
+        // holds things like "ready for pairing"
+        let store = new Promise((resolve) => {
+            C_STORE.found({
+                labels: [
+                    `device=${device._id}`,
+                    "zigbee=true",
+                    "phoscon=true"
+                ]
+            }, (store) => {
 
-            });
-        }, (device) => {
-            return new Promise((resolve) => {
+                // feedback
+                logger.debug(`Store for device "${device.name}" found`);
 
-                C_STORE.found({
-                    namespace: info.uuid,
-                    item: device._id
-                }, (store) => {
-                    resolve([device, store])
-                }, async (filter) => {
+                resolve(store);
 
-                    await C_STORE.add({
-                        ...filter,
-                        config: [{
-                            key: "pairing",
-                            value: false,
-                            type: "boolean",
-                            description: `Is device in paring mode? 
-                Enable if so. This tells the plugin to aqquire a API Key`
-                        }]
-                    });
+            }, (filter) => {
 
+                // feedback
+                logger.verbose(`Add store for device "${device.name}"`)
+
+                C_STORE.add({
+                    name: `Phoscon Gateway (${device.name})`,
+                    ...filter,
+                    config: [{
+                        name: "Pairing",
+                        key: "pairing",
+                        value: false,
+                        type: "boolean",
+                        description: `Is device in paring mode?\nEnable if so. This tells the plugin to aqquire a API Key`
+                    }]
                 });
 
             });
-        }].reduce((prev, cur) => {
+        });
 
-            return prev().then(cur);
 
-        }).then(([device, store]) => {
+        // create/get vault for secrets
+        // stores the API key from the gateway
+        let vault = new Promise((resolve) => {
+            C_VAULT.found({
+                identifier: device._id, // see #429
+                name: `Device "${device.name}" API key`,
+            }, (vault) => {
 
-            console.log("device & store", device, store);
+                // feedback
+                logger.debug(`Vault for device "${device.name}" found`);
 
+                resolve(vault);
+
+            }, (filter) => {
+
+                // feedback
+                logger.verbose(`Add vault for device "${device.name}"`)
+
+                // create new vault if no one is found
+                C_VAULT.add({
+                    ...filter,
+                    secrets: [{
+                        key: "api_key",
+                        name: "API key",
+                    }]
+                });
+
+            });
+        });
+
+
+        // handle pairing changes & get API key
+        Promise.all([store, vault]).then(([store, vault]) => {
 
             let config = store.lean();
             let events = store.changes();
+            let timeout = null;
 
             events.on("changed", (key, value) => {
+
+                // stop previoius autorset
+                clearInterval(timeout);
+
                 if (key === "pairing" && value) {
 
-                    logger.info(`Gateway "${device.name}" is in paring mode`);
-                    logger.debug("Optain API key");
+                    logger.debug(`Gateway "${device.name}" is in paring mode`);
 
                     // get http interface
                     let iface = device.interfaces.find(({ settings }) => {
@@ -99,6 +106,9 @@ module.exports = async (logger, [
                     // create http agent
                     let agent = iface.httpAgent();
 
+
+                    // do http request to get api key
+                    // see: https://dresden-elektronik.github.io/deconz-rest-doc/endpoints/configuration/#aquireapikey
                     request(`http://${iface.settings.host}:${iface.settings.port}/api`, {
                         method: "POST",
                         agent,
@@ -111,210 +121,53 @@ module.exports = async (logger, [
                     }, (err, result) => {
                         if (err) {
 
-                            logger.error("Could not fulfill pairing request", err);
+                            // feedback
+                            logger.error(err, "Could not fulfill pairing request");
 
                         } else {
-
-
                             if (result.body[0]?.success) {
-                                C_VAULT.found({
-                                    identifier: device._id,
-                                    name: `${device.name} API key`,
-                                }, (vault) => {
-                                    try {
 
-                                        // save aqqueried key
-                                        vault.secrets[0].encrypt(result.body[0].success.username);
+                                logger.info("API key aqquiered");
 
-                                        logger.info("API key aqquiered");
+                                // pairing completed
+                                config.pairing = false;
 
-                                        // pairing completed
-                                        config.pairing = false;
+                                // save aqqueried key
+                                vault.secrets[0].encrypt(result.body[0].success.username);
 
-                                    } catch (err) {
-
-                                        logger.erorr("Could not store api key")
-
-                                    }
-                                }, async (filter) => {
-                                    try {
-
-                                        // create new vault if no one is found
-                                        await C_VAULT.add({
-                                            ...filter,
-                                            secrets: [{
-                                                key: "api_key",
-                                                name: "API key",
-                                            }]
-                                        });
-
-                                        logger.debug("vault for api key created");
-
-                                    } catch (err) {
-
-                                        logger.debug("could create vault for api key", err);
-
-                                    }
-                                });
                             } else {
 
-                                logger.error("Could not aqqueire API key", result.body[0]?.error?.description);
+                                // pairing not completed
+                                config.pairing = false;
+
+                                logger.error("Could not aqqueire API key:", result.body[0]?.error?.description);
                                 logger.verbose(result.body[0]);
 
                             }
-
-
                         }
                     });
 
 
+                    // auto-reset after 60s
+                    timeout = setTimeout(() => {
+                        config.pairing = false;
+                    }, 60000);
+
+
                 } else {
-
                     logger.info(`Gateway "${device.name}" leaved paring mode`);
-
                 }
+
             });
 
         }).catch((err) => {
 
-        });
-        */
-
-        C_DEVICES.found({
-            meta: {
-                manufacturer: "phoscon",
-                model: "raspbee",
-            }
-        }, (device) => {
-
-            console.log("Device", device.name);
-
-            C_STORE.found({
-                namespace: info.uuid,
-                item: device._id
-            }, (store) => {
-
-                let config = store.lean();
-                let events = store.changes();
-
-                events.on("changed", (key, value) => {
-                    if (key === "pairing" && value) {
-
-                        logger.info(`Gateway "${device.name}" is in paring mode`);
-                        logger.debug("Optain API key");
-
-                        // get http interface
-                        let iface = device.interfaces.find(({ settings }) => {
-                            return settings.port === 80;
-                        });
-
-                        // create http agent
-                        let agent = iface.httpAgent();
-
-                        request(`http://${iface.settings.host}:${iface.settings.port}/api`, {
-                            method: "POST",
-                            agent,
-                            body: JSON.stringify({
-                                devicetype: "OpenHaus"
-                            }),
-                            headers: {
-                                "content-type": "application/json"
-                            }
-                        }, (err, result) => {
-                            if (err) {
-
-                                logger.error("Could not fulfill pairing request", err);
-
-                            } else {
-
-
-                                if (result.body[0]?.success) {
-                                    C_VAULT.found({
-                                        identifier: device._id,
-                                        name: `${device.name} API key`,
-                                    }, (vault) => {
-                                        try {
-
-                                            // save aqqueried key
-                                            vault.secrets[0].encrypt(result.body[0].success.username);
-
-                                            logger.info("API key aqquiered");
-
-                                            // pairing completed
-                                            config.pairing = false;
-
-                                        } catch (err) {
-
-                                            logger.erorr("Could not store api key")
-
-                                        }
-                                    }, async (filter) => {
-                                        try {
-
-                                            // create new vault if no one is found
-                                            await C_VAULT.add({
-                                                ...filter,
-                                                secrets: [{
-                                                    key: "api_key",
-                                                    name: "API key",
-                                                }]
-                                            });
-
-                                            logger.debug("vault for api key created");
-
-                                        } catch (err) {
-
-                                            logger.debug("could create vault for api key", err);
-
-                                        }
-                                    });
-                                } else {
-
-                                    logger.error("Could not aqqueire API key", result.body[0]?.error?.description);
-                                    logger.verbose(result.body[0]);
-
-                                }
-
-
-                            }
-                        });
-
-
-                    } else {
-
-                        logger.info(`Gateway "${device.name}" leaved paring mode`);
-
-                    }
-                });
-
-            }, async (filter) => {
-                try {
-
-                    // add new config item if nothing is found
-                    await C_STORE.add({
-                        ...filter,
-                        config: [{
-                            key: "pairing",
-                            value: false,
-                            type: "boolean",
-                            description: `Is device in paring mode? 
-                Enable if so. This tells the plugin to aqquire a API Key`
-                        }]
-                    });
-
-                } catch (err) {
-                    logger.error(err, `Could not add config settings for device: ${filter.item}`);
-                }
-            });
-
+            // feedback
+            logger.error(err, "Could not setup config/vault setup");
 
         });
 
 
+    });
 
-    } catch (err) {
-
-        logger.error(err, "Could not setup pairing!");
-
-    }
 };

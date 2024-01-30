@@ -5,33 +5,54 @@ module.exports = (logger, [
     C_DEVICES,
     C_VAULT
 ]) => {
-    try {
+    C_DEVICES.found({
+        labels: [
+            "zigbee=true",
+            "phoscon=true",
+        ]
+    }, async (device) => {
+        try {
+
+            let interfaces = device.interfaces.filter(({ type }) => {
+                return type === "ETHERNET";
+            });
+
+            let iface = interfaces.find(({ settings }) => {
+                return settings.port === 80;
+            });
+
+            let agent = iface.httpAgent();
+            let { host, port } = iface.settings;
 
 
-
-        C_DEVICES.found({
-            meta: {
-                manufacturer: "phoscon",
-                model: "raspbee"
-            }
-        }, (device) => {
             C_VAULT.found({
                 identifier: device._id
-            }, (vault) => {
+            }, async (vault) => {
 
-                let iface = device.interfaces.find(({ settings }) => {
-                    return settings.port === 80;
-                });
+
+                // feels hacky and produces duplicate output
+                // see file "device-handler.js", same issue...
+                if (vault.secrets[0].value === null) {
+                    await new Promise((resolve) => {
+
+                        vault.changes().once("changed", ({ name }) => {
+
+                            logger.debug(`Vault secret "${name}" changed`);
+                            resolve();
+
+                        });
+
+                    });
+                }
 
                 let secret = vault.secrets[0].decrypt();
-                let agent = iface.httpAgent();
 
-                //iface.on("attached", () => {
 
-                C_ENDPOINTS.items.filter((endpoint) => {
-                    return endpoint.device === device._id;
-                }).forEach((endpoint) => {
+                C_ENDPOINTS.found({
+                    device: device._id
+                }, (endpoint) => {
 
+                    let id = endpoint.labels.value("identifier");
 
                     endpoint.commands.forEach((command) => {
                         command.setHandler((cmd, iface, params, done) => {
@@ -49,11 +70,8 @@ module.exports = (logger, [
                             }
 
 
-                            request(`http://${iface.settings.host}:${iface.settings.port}/api/${secret}/lights/${endpoint.identifier}/state`, {
+                            request(`http://${host}:${port}/api/${secret}/lights/${id}/state`, {
                                 agent,
-                                //NOTE:
-                                // Keep tcp socket open
-                                // how to set this via agent?
                                 headers: {
                                     "Connection": "Keep-Alive"
                                 },
@@ -78,28 +96,14 @@ module.exports = (logger, [
                         });
                     });
 
-
                 });
 
-                //});
-
-
-
-
-
-
-
-
-
-
-
-
-
             });
-        });
-    } catch (err) {
 
-        logger.error(err, "Could not setup endpoint handling!");
+        } catch (err) {
 
-    }
+            logger.error(err, "Could not setup endpoint handling");
+
+        }
+    });
 };
