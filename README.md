@@ -23,6 +23,13 @@ Plugin that integrates the [Phoscon/RaspBee](https://dresden-elektronik.github.i
 # Note
 <small>¹) This is known bug, the problem is that there is currently no wait to check if a connector is available/device interface is bridged</small>
 
+# Debugging
+### Listen for ssdp messages
+```sh
+# this show ssdp messages received in the network
+nc -ulvv 239.255.255.250 1900
+```
+
 # Links
 - https://phoscon.de/de/raspbee/install
 - https://dresden-elektronik.github.io/deconz-rest-doc/
