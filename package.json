@@ -1,0 +1,30 @@
+{
+  "name": "plugin-boilerplate",
+  "private": "true",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 0",
+    "build": "grunt build",
+    "compress": "grunt compress",
+    "checksum": "grunt checksum",
+    "release": "grunt release",
+    "postinstall": "node ./wizard/wizard.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mStirner/plugin-boilerplate.git"
+  },
+  "author": "Marc Stirner <marc.stirner@open-haus.io>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mStirner/plugin-boilerplate/issues"
+  },
+  "homepage": "https://github.com/mStirner/plugin-boilerplate#readme",
+  "devDependencies": {
+    "grunt": "^1.6.1",
+    "grunt-contrib-uglify": "^5.2.2",
+    "inquirer": "^9.2.20"
+  }
+}
