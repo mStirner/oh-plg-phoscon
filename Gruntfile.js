@@ -57,7 +57,7 @@ module.exports = function (grunt) {
     });
 
     grunt.registerTask("compress", () => {
-        cp.execSync(`cd ${PATH_BUILD} && tar -czvf ${path.join(PATH_DIST, `${pkg.name}.tgz`)} *`, {
+        cp.execSync(`cd ${PATH_BUILD} && tar -czvf ${path.join(PATH_DIST, `${pkg.name}-v${pkg.version}.tgz`)} *`, {
             env: process.env,
             stdio: "inherit"
         });

@@ -2,40 +2,55 @@ module.exports = (info, logger, init) => {
     return init([
         "devices",
         "endpoints",
-        "plugins",
-        "rooms",
         "ssdp",
-        "store",
-        "users",
-        "vault"
-    ], (scope, [
+        "vault",
+        "store"
+    ], async (scope, [
         C_DEVICES,
         C_ENDPOINTS,
-        C_PLUGINS,
-        C_ROOMS,
         C_SSDP,
-        C_STORE,
-        C_USERS,
-        C_VAULT
+        C_VAULT,
+        C_STORE
     ]) => {
 
 
-        // do something here with the components
-        // documentation about them can be found on:
-        // https://docs.open-haus.io/#/backend/components/
+        // Phase 1: Autodiscover device & add it
+        require("./autodiscover.js")(logger, [
+            C_DEVICES,
+            C_SSDP,
+            C_STORE
+        ], info);
 
 
-        // scope = plugin class instace
-        console.log(scope);
+        // Phase 2: Pair device & get API key
+        require("./pairing.js")(logger, [
+            C_DEVICES,
+            C_VAULT,
+            C_STORE
+        ], info);
 
 
-        // example logger usage
-        logger.trace("Hello World from plugin ", info.name);
-        logger.verbose("Hello World from plugin ", info.name);
-        logger.debug("Hello World from plugin ", info.name);
-        logger.info("Hello World from plugin ", info.name);
-        logger.warn("Hello World from plugin ", info.name);
-        logger.error("Hello World from plugin ", info.name);
+        // Phase 3: Handle added device & fetch endpoints
+        require("./device-handler.js")(logger, [
+            C_DEVICES,
+            C_ENDPOINTS,
+            C_VAULT
+        ], info);
+
+
+        // Phase 4: Handle endpoints & setup command/state handler
+        require("./endpoint-handler.js")(logger, [
+            C_ENDPOINTS,
+            C_DEVICES,
+            C_VAULT
+        ], info);
+
+
+        // Phase 5: Handle state changes for endpoints
+        require("./state-handler.js")(logger, [
+            C_ENDPOINTS,
+            C_DEVICES
+        ], info);
 
 
     });

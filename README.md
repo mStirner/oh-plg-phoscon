@@ -11,23 +11,19 @@ Add plugin item via HTTP API:<br />
 [PUT] `http://{{HOST}}:{{PORT}}/api/plugins/`
 ```json
 {
-   "name":"Plugin Boilerplate",
-   "version":1,
+   "name":"Phoscon Integration",
+   "version": "1.0.0",
    "intents":[
       "devices",
       "endpoints",
-      "plugins",
-      "rooms",
-      "ssdp",
       "store",
-      "users",
-      "vault"
+      "vault",
+      "ssdp"
    ],
-   "uuid": "00000000-0000-0000-0000-000000000000"
+   "uuid": "6453b600-19d5-4a5d-ac33-517960f2ff88"
 }
-
 ```
 Mount the source code into the backend plugins folder
 ```sh
-sudo mount --bind ~/projects/OpenHaus/plugins/plugin-boilerplate/ ~/projects/OpenHaus/backend/plugins/00000000-0000-0000-0000-000000000000/
+sudo mount --bind ~/projects/OpenHaus/plugins/oh-plg-phoscon/ ~/projects/OpenHaus/backend/plugins/6453b600-19d5-4a5d-ac33-517960f2ff88/
 ```
