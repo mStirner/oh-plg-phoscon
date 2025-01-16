@@ -66,22 +66,34 @@ module.exports = function (grunt) {
     grunt.registerTask("checksum", () => {
 
         let m5f = path.join(PATH_DIST, "./checksums.md5");
+        let s256f = path.join(PATH_DIST, "./checksums.sha256");
 
         fs.rmSync(m5f, { force: true });
+        fs.rmSync(s256f, { force: true });
+
         let files = fs.readdirSync(PATH_DIST);
-        let fd = fs.openSync(m5f, "w");
+
+        let fdMd5 = fs.openSync(m5f, "w");
+        let fdS256 = fs.openSync(s256f, "w");
 
         files.forEach((name) => {
 
             let file = path.join(PATH_DIST, name);
             let content = fs.readFileSync(file);
-            let hasher = crypto.createHash("md5");
-            let hash = hasher.update(content).digest("hex");
-            fs.writeSync(fd, `${hash}\t${name}${os.EOL}`);
+
+            let hasherMd5 = crypto.createHash("md5");
+            let hashMd5 = hasherMd5.update(content).digest("hex");
+
+            let hashers256 = crypto.createHash("sha256");
+            let hashS256 = hashers256.update(content).digest("hex");
+
+            fs.writeSync(fdMd5, `${hashMd5}\t${name}${os.EOL}`);
+            fs.writeSync(fdS256, `${hashS256}\t${name}${os.EOL}`);
 
         });
 
-        fs.closeSync(fd);
+        fs.closeSync(fdMd5);
+        fs.closeSync(fdS256);
 
     });
 
