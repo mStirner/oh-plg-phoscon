@@ -24,6 +24,10 @@ module.exports = (logger, [
             let agent = iface.httpAgent();
             let { host, port } = iface.settings;
 
+            agent.on("error", (err) => {
+                logger.error(err, "httpAgent error");
+            });
+
 
             C_VAULT.found({
                 identifier: device._id

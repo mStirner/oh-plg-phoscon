@@ -28,6 +28,11 @@ module.exports = async (logger, [
             let { host, port } = iface.settings;
 
 
+            agent.on("error", (err) => {
+                logger.error(err, "httpAgent error");
+            });
+
+
             C_VAULT.found({
                 identifier: device._id
                 /*
@@ -63,7 +68,7 @@ module.exports = async (logger, [
                 // TODO: Improve this
                 // what would be a  better way to check if connection is available?
                 // The connector needs to be restarted to fire this...
-                let worker = infinity((redo) => {
+                let worker = debounce((redo) => {
 
                     // fetch lights
                     // see: https://dresden-elektronik.github.io/deconz-rest-doc/endpoints/lights/
@@ -284,9 +289,9 @@ module.exports = async (logger, [
                         }
                     });
 
-                });
+                }, 1000);
 
-                debounce(worker, 3000);
+                infinity(worker, 5000);
 
             });
 

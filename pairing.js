@@ -110,6 +110,10 @@ module.exports = async (logger, [
                     // create http agent
                     let agent = iface.httpAgent();
 
+                    agent.on("error", (err) => {
+                        logger.error(err, "httpAgent error");
+                    });
+
 
                     // do http request to get api key
                     // see: https://dresden-elektronik.github.io/deconz-rest-doc/endpoints/configuration/#aquireapikey
