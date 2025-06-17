@@ -102,19 +102,71 @@ module.exports = async (logger, [
                                     // feedback
                                     logger.debug(`Add endpoint (light) "${item.name}"`);
 
+                                    let commands = [{
+                                        name: "On",
+                                        alias: "ON",
+                                        interface: iface._id
+                                    }, {
+                                        name: "Off",
+                                        alias: "OFF",
+                                        interface: iface._id
+                                    }];
+
+                                    if (item?.hascolor) {
+
+                                        commands.push({
+                                            name: "Color",
+                                            alias: "COLOR",
+                                            interface: iface._id,
+                                            params: [{
+                                                key: "r",
+                                                type: "number",
+                                                min: 0,
+                                                max: 255
+                                            }, {
+                                                key: "g",
+                                                type: "number",
+                                                min: 0,
+                                                max: 255
+                                            }, {
+                                                key: "b",
+                                                type: "number",
+                                                min: 0,
+                                                max: 255
+                                            }]
+                                        });
+
+                                        commands.push({
+                                            name: "Saturation",
+                                            alias: "SATURATION",
+                                            interface: iface._id,
+                                            params: [{
+                                                key: "saturation",
+                                                type: "number",
+                                                min: 0,
+                                                max: 255
+                                            }]
+                                        });
+
+                                        commands.push({
+                                            name: "Brigthness",
+                                            alias: "BRIGHTNESS",
+                                            interface: iface._id,
+                                            params: [{
+                                                key: "brightness",
+                                                type: "number",
+                                                min: 0,
+                                                max: 255
+                                            }]
+                                        });
+
+                                    }
+
                                     C_ENDPOINTS.add({
                                         name: item.name,
                                         device: device._id,
                                         icon: "fa-solid fa-lightbulb",
-                                        commands: [{
-                                            name: "On",
-                                            alias: "ON",
-                                            interface: iface._id
-                                        }, {
-                                            name: "Off",
-                                            alias: "OFF",
-                                            interface: iface._id
-                                        }],
+                                        commands,
                                         /*
                                         states: [{
                                             name: "On",
