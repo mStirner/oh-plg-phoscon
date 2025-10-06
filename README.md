@@ -1,5 +1,6 @@
 # Introduction
-This plugin controlls phoscon/zigbee gateways.
+This plugin controlls phoscon/zigbee gateways.<br />
+Tested only on phsocon/dreseden elektronik devices.
 
 # Installation
 1) Create a new plugin over the OpenHaus backend HTTP API
