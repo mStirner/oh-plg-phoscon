@@ -1,5 +1,5 @@
 # Introduction
-This is a boilerplate plugin.
+This plugin controlls phoscon/zigbee gateways.
 
 # Installation
 1) Create a new plugin over the OpenHaus backend HTTP API
