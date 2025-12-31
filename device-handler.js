@@ -119,6 +119,24 @@ module.exports = async (logger, [
                                             alias: "COLOR",
                                             interface: iface._id,
                                             params: [{
+                                                key: "color",
+                                                type: "number",
+                                                min: 0,
+                                                max: 360,
+                                                classes: ["hue-fader"]
+                                            }, {
+                                                key: "brightness",
+                                                type: "number",
+                                                min: 0,
+                                                max: 255,
+                                                classes: ["brightness-fader"]
+                                            }, {
+                                                key: "saturation",
+                                                type: "number",
+                                                min: 0,
+                                                max: 255,
+                                                classes: ["saturation-fader"]
+                                            }/*{
                                                 key: "r",
                                                 type: "number",
                                                 min: 0,
@@ -133,9 +151,10 @@ module.exports = async (logger, [
                                                 type: "number",
                                                 min: 0,
                                                 max: 255
-                                            }]
+                                            }*/]
                                         });
 
+                                        /*
                                         commands.push({
                                             name: "Saturation",
                                             alias: "SATURATION",
@@ -159,6 +178,7 @@ module.exports = async (logger, [
                                                 max: 255
                                             }]
                                         });
+                                        */
 
                                     }
 

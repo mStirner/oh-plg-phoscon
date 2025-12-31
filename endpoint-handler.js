@@ -109,6 +109,7 @@ module.exports = (logger, [
                                 sat: 255
                             };
 
+                            /*
                             if (cmd.alias === "ON") {
 
                                 body.on = true;
@@ -119,12 +120,14 @@ module.exports = (logger, [
 
                             } else if (cmd.alias === "COLOR") {
 
-                                let { r, g, b } = params.lean();
+                                //let { r, g, b } = params.lean();
+                                let { color = 0 } = params.lean();
 
                                 body.on = true;
 
                                 // convert color params to hue
-                                body.hue = rgbToHueDeconz(r, g, b);
+                                //body.hue = rgbToHueDeconz(r, g, b);
+                                body.hue = Math.round(color * (65535 / 360));
 
                             } else if (cmd.alias === "SATURATION") {
 
@@ -140,6 +143,35 @@ module.exports = (logger, [
 
                                 body.on = true;
                                 body.bri = brightness;
+
+                            } else {
+
+                                logger.warn("alias not set/on/off, got", cmd.alias)
+
+                            }
+                            */
+
+                            if (cmd.alias === "ON") {
+
+                                body.on = true;
+
+                            } else if (cmd.alias === "OFF") {
+
+                                body.on = false;
+
+                            } else if (cmd.alias === "COLOR") {
+
+                                //let { r, g, b } = params.lean();
+                                let { color = 0, brightness = 255, saturation = 255 } = params.lean();
+
+                                body.on = true;
+
+                                // convert color params to hue
+                                //body.hue = rgbToHueDeconz(r, g, b);
+                                body.hue = Math.round(color * (65535 / 360));
+
+                                body.bri = brightness;
+                                body.sat = saturation;
 
                             } else {
 
